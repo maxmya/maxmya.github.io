@@ -1,395 +1,472 @@
-jQuery(document).ready(function () {
+/* ===================================================================
+ * Glint - Main JS
+ *
+ * ------------------------------------------------------------------- */
 
-    jQuery(".section-title-holder").stick_in_parent({offset_top: 64}).on("sticky_kit:stick", function (e) {
-        jQuery('.menu-wrapper, .menu-wrapper .sub-menu').css('backgroundColor', jQuery(this).css("backgroundColor"));
-        jQuery('.menu-wrapper a, .mob-menu').css('color', jQuery(this).find('.section-num span').css("color"));
-    });
+(function($) {
 
-    jQuery(".section-title-holder").stick_in_parent({offset_top: 64}).on("sticky_kit:unbottom", function (e) {
-        jQuery('.menu-wrapper, .menu-wrapper .sub-menu').css('backgroundColor', jQuery(this).css("backgroundColor"));
-        jQuery('.menu-wrapper a, .mob-menu').css('color', jQuery(this).find('.section-num span').css("color"));
-    });
+    "use strict";
+    
+    var cfg = {
+        scrollDuration : 800, // smoothscroll duration
+        mailChimpURL   : 'https://facebook.us8.list-manage.com/subscribe/post?u=cdb7b577e41181934ed6a6a44&amp;id=e6957d85dc'   // mailchimp url
+    },
 
+    $WIN = $(window);
 
-    //Placeholder show/hide
-    jQuery('input, textarea').focus(function () {
-        jQuery(this).data('placeholder', jQuery(this).attr('placeholder'));
-        jQuery(this).attr('placeholder', '');
-    });
-    jQuery('input, textarea').blur(function () {
-        jQuery(this).attr('placeholder', jQuery(this).data('placeholder'));
-    });
+    // Add the User Agent to the <html>
+    // will be used for IE10 detection (Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0))
+    var doc = document.documentElement;
+    doc.setAttribute('data-useragent', navigator.userAgent);
 
 
-    //Portfolio
-    var grid = jQuery('.grid').imagesLoaded(function () {
-        grid.isotope({
-            itemSelector: '.grid-item',
-            masonry: {
-                columnWidth: '.grid-sizer'
+   /* Preloader
+    * -------------------------------------------------- */
+    var clPreloader = function() {
+        
+        $("html").addClass('cl-preload');
+
+        $WIN.on('load', function() {
+
+            //force page scroll position to top at page refresh
+            // $('html, body').animate({ scrollTop: 0 }, 'normal');
+
+            // will first fade out the loading animation 
+            $("#loader").fadeOut("slow", function() {
+                // will fade out the whole DIV that covers the website.
+                $("#preloader").delay(300).fadeOut("slow");
+            }); 
+            
+            // for hero content animations 
+            $("html").removeClass('cl-preload');
+            $("html").addClass('cl-loaded');
+        
+        });
+    };
+
+
+   /* Menu on Scrolldown
+    * ------------------------------------------------------ */
+    var clMenuOnScrolldown = function() {
+        
+        var menuTrigger = $('.header-menu-toggle');
+
+        $WIN.on('scroll', function() {
+
+            if ($WIN.scrollTop() > 150) {
+                menuTrigger.addClass('opaque');
             }
-        }
-        );
-        //Fix for portfolio item text
-        jQuery('.portfolio-text-holder').each(function () {
-            jQuery(this).find('.portfolio-text-wrapper').css('margin-top', (jQuery(this).height() - jQuery(this).find('.portfolio-text-wrapper').height()) / 2 - 70);
+            else {
+                menuTrigger.removeClass('opaque');
+            }
+
+        });
+    };
+
+
+   /* OffCanvas Menu
+    * ------------------------------------------------------ */
+    var clOffCanvas = function() {
+
+        var menuTrigger     = $('.header-menu-toggle'),
+            nav             = $('.header-nav'),
+            closeButton     = nav.find('.header-nav__close'),
+            siteBody        = $('body'),
+            mainContents    = $('section, footer');
+
+        // open-close menu by clicking on the menu icon
+        menuTrigger.on('click', function(e){
+            e.preventDefault();
+            // menuTrigger.toggleClass('is-clicked');
+            siteBody.toggleClass('menu-is-open');
         });
 
-        //Fix for portfolio hover text fade in/out
-        jQuery('.grid-item a').hover(function () {
-            jQuery(this).find('.portfolio-text-holder').fadeIn('fast');
-        }, function () {
-            jQuery(this).find('.portfolio-text-holder').fadeOut('fast');
+        // close menu by clicking the close button
+        closeButton.on('click', function(e){
+            e.preventDefault();
+            menuTrigger.trigger('click');	
         });
-    });
 
-});
-
-
-jQuery(window).load(function () {
-
-    //Show-Hide Mobile Menu
-    jQuery('.mob-menu').on("click", showHideMobMenu);
-    if (jQuery("body").width() <= 925)
-    {
-        jQuery('.main-menu a').on("click", hideMobMenuItemClick);
-    }
-
-    //Set each image slider
-    jQuery(".image-slider").each(function () {
-        var id = jQuery(this).attr('id');
-        var auto_value = window[id + '_auto'];
-        if (auto_value == 'false')
-        {
-            auto_value = false;
-        } else {
-            auto_value = true;
-        }
-
-        var hover_pause = window[id + '_hover'];
-        if (hover_pause == 'true')
-        {
-            hover_pause = 'resume';
-        } else {
-            hover_pause = false;
-        }
-
-        var speed_value = window[id + '_speed'];
-        jQuery('#' + id).carouFredSel({
-            responsive: true,
-            width: 'variable',
-            auto: {
-                play: auto_value,
-                pauseOnHover: hover_pause
-            },
-            next: '#' + id + '_next',
-            scroll: {
-                fx: 'crossfade',
-                duration: parseFloat(speed_value)
-            },
-            swipe: {
-                onMouse: true,
-                onTouch: true
-            },
-            items: {
-                visible: 1,
-                height: 'variable'
+        // close menu clicking outside the menu itself
+        siteBody.on('click', function(e){
+            if( !$(e.target).is('.header-nav, .header-nav__content, .header-menu-toggle, .header-menu-toggle span') ) {
+                // menuTrigger.removeClass('is-clicked');
+                siteBody.removeClass('menu-is-open');
             }
         });
-    });
-    jQuery('.image-slider-wrapper').each(function () {
-        var slider_width = jQuery(this).width();
-        var pagination_width = jQuery(this).find('.carousel_pagination').width();
-        jQuery(this).find('.carousel_pagination').css("margin-left", (slider_width - pagination_width) / 2);
-    });
+
+    };
 
 
-    //Set each testimonial slider
-    jQuery(".testimonial").each(function () {
-        var id = jQuery(this).attr('id');
-        var auto_value = window[id + '_auto'];
-        if (auto_value == 'false')
-        {
-            auto_value = false;
-        } else {
-            auto_value = true;
-        }
+   /* photoswipe
+    * ----------------------------------------------------- */
+    var clPhotoswipe = function() {
+        var items = [],
+            $pswp = $('.pswp')[0],
+            $folioItems = $('.item-folio');
 
-        var hover_pause = window[id + '_hover'];
-        if (hover_pause == 'true')
-        {
-            hover_pause = 'resume';
-        } else {
-            hover_pause = false;
-        }
+            // get items
+            $folioItems.each( function(i) {
 
-        var speed_value = window[id + '_speed'];
-        jQuery('#' + id).carouFredSel({
-            responsive: true,
-            width: 'variable',
-            auto: {
-                play: auto_value,
-                pauseOnHover: hover_pause
-            },
-            next: '#' + id + '_next',
-            scroll: {
-                fx: 'crossfade',
-                duration: parseFloat(speed_value)
-            },
-            swipe: {
-                onMouse: true,
-                onTouch: true
-            },
-            items: {
-                height: 'variable'
-            }
-        });
-    });
-
-    jQuery('.carousel_pagination').each(function () {
-        var pagination_width = jQuery(this).width();
-        var windw_width = jQuery('.testimonial-slider-holder').width();
-        jQuery(this).css("margin-left", (windw_width - pagination_width) / 2);
-    });
-
-    //Set each FW image slider
-    jQuery(".fw-image-slider").each(function () {
-        var id = jQuery(this).attr('id');
-
-        var auto_value = window[id + '_auto'];
-        if (auto_value == 'false')
-        {
-            auto_value = false;
-        } else {
-            auto_value = true;
-        }
-
-        var hover_pause = window[id + '_hover'];
-        if (hover_pause == 'true')
-        {
-            hover_pause = 'resume';
-        } else {
-            hover_pause = false;
-        }
-
-        var speed_value = window[id + '_speed'];
-        var start_value = window[id + '_start'];
-        var width_value = window[id + '_width'];
-        var num_value = window[id + '_num'];
-
-        jQuery('#' + id).carouFredSel({
-            responsive: true,
-            width: '100%',
-            auto: {
-                play: auto_value,
-                pauseOnHover: hover_pause
-            },
-            pagination: '#' + id + '_fw_image_slide_pager',
-            next: '#' + id + '_fw_next',
-            scroll: {
-                duration: parseFloat(speed_value)
-            },
-            swipe: {
-                onMouse: true,
-                onTouch: true
-            },
-            items: {
-                width: parseFloat(width_value),
-                height: 'auto', //	optionally resize item-height
-                visible: {
-                    min: 1,
-                    max: parseFloat(num_value)
-                },
-                start: parseFloat(start_value)
-            }
-        });
-    });
-
-
-    //PrettyPhoto initial
-    jQuery('a[data-rel]').each(function () {
-        jQuery(this).attr('rel', jQuery(this).data('rel'));
-    });
-    jQuery("a[rel^='prettyPhoto']").prettyPhoto({
-        animation_speed: 'fast', /* fast/slow/normal */
-        slideshow: false, /* false OR interval time in ms */
-        autoplay_slideshow: false, /* true/false */
-        opacity: 0.80, /* Value between 0 and 1 */
-        show_title: true, /* true/false */
-        allow_resize: true, /* Resize the photos bigger than viewport. true/false */
-        default_width: 500,
-        default_height: 344,
-        counter_separator_label: '/', /* The separator for the gallery counter 1 "of" 2 */
-        theme: 'pp_default', /* light_rounded / dark_rounded / light_square / dark_square / facebook */
-        hideflash: false, /* Hides all the flash object on a page, set to TRUE if flash appears over prettyPhoto */
-        wmode: 'opaque', /* Set the flash wmode attribute */
-        autoplay: true, /* Automatically start videos: True/False */
-        modal: false, /* If set to true, only the close button will close the window */
-        overlay_gallery: false, /* If set to true, a gallery will overlay the fullscreen image on mouse over */
-        keyboard_shortcuts: true, /* Set to false if you open forms inside prettyPhoto */
-        deeplinking: false,
-        social_tools: false,
-        iframe_markup: '<iframe src ="{path}" width="{width}" height="{height}" frameborder="no" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>'
-    });
-
-    var $videoDefaultWidth = Math.ceil(jQuery('body').width() * 0.7);
-    var $videoDefaultHeight = Math.ceil($videoDefaultWidth * 0.5625);
-
-    jQuery("a[rel^='prettyPhoto']").each(function () {
-
-        var str = jQuery(this).attr('href');
-        if ((str.indexOf("youtube") >= 0 || (str.indexOf("vimeo")) >= 0))
-        {
-            jQuery(this).attr("href", str + "&width=" + $videoDefaultWidth + "&height=" + $videoDefaultHeight);
-        }
-    });
-
-    //Set menu
-    jQuery('.main-menu').smartmenus({
-        subMenusSubOffsetX: 1,
-        subMenusSubOffsetY: -8,
-        markCurrentItem: true
-    });
-    var $mainMenu = jQuery('.main-menu').on('click', 'span.sub-arrow', function (e) {
-        var obj = $mainMenu.data('smartmenus');
-        if (obj.isCollapsible()) {
-            var $item = jQuery(this).parent(),
-                    $sub = $item.parent().dataSM('sub');
-            $sub.dataSM('arrowClicked', true);
-        }
-    }).bind({
-        'beforeshow.smapi': function (e, menu) {
-            var obj = $mainMenu.data('smartmenus');
-            if (obj.isCollapsible()) {
-                var $menu = jQuery(menu);
-                if (!$menu.dataSM('arrowClicked')) {
-                    return false;
+                var $folio = $(this),
+                    $thumbLink =  $folio.find('.thumb-link'),
+                    $title = $folio.find('.item-folio__title'),
+                    $caption = $folio.find('.item-folio__caption'),
+                    $titleText = '<h4>' + $.trim($title.html()) + '</h4>',
+                    $captionText = $.trim($caption.html()),
+                    $href = $thumbLink.attr('href'),
+                    $size = $thumbLink.data('size').split('x'),
+                    $width  = $size[0],
+                    $height = $size[1];
+         
+                var item = {
+                    src  : $href,
+                    w    : $width,
+                    h    : $height
                 }
-                $menu.removeDataSM('arrowClicked');
-            }
-        }
-    });
+
+                if ($caption.length > 0) {
+                    item.title = $.trim($titleText + $captionText);
+                }
+
+                items.push(item);
+            });
+
+            // bind click event
+            $folioItems.each(function(i) {
+
+                $(this).on('click', function(e) {
+                    e.preventDefault();
+                    var options = {
+                        index: i,
+                        showHideOpacity: true
+                    }
+
+                    // initialize PhotoSwipe
+                    var lightBox = new PhotoSwipe($pswp, PhotoSwipeUI_Default, items, options);
+                    lightBox.init();
+                });
+
+            });
+
+    };
+    
+
+   /* Stat Counter
+    * ------------------------------------------------------ */
+    var clStatCount = function() {
+        
+        var statSection = $(".about-stats"),
+            stats = $(".stats__count");
+
+        statSection.waypoint({
+
+            handler: function(direction) {
+
+                if (direction === "down") {
+
+                    stats.each(function () {
+                        var $this = $(this);
+
+                        $({ Counter: 0 }).animate({ Counter: $this.text() }, {
+                            duration: 4000,
+                            easing: 'swing',
+                            step: function (curValue) {
+                                $this.text(Math.ceil(curValue));
+                            }
+                        });
+                    });
+
+                } 
+
+                // trigger once only
+                this.destroy();
+
+            },
+
+            offset: "90%"
+
+        });
+    };
 
 
-    jQuery('.section-title-holder').trigger("sticky_kit:recalc");
+   /* Masonry
+    * ---------------------------------------------------- */ 
+    var clMasonryFolio = function () {
+        
+        var containerBricks = $('.masonry');
 
-    jQuery('.doc-loader').fadeOut('fast');
-});
-
-
-jQuery(window).resize(function () {
-
-    //Show-Hide Mobile Menu        
-    if (jQuery("body").width() <= 925)
-    {
-        jQuery('.main-menu a').on("click", hideMobMenuItemClick);
-    }
-
-    var $videoDefaultWidth = Math.ceil(jQuery('body').width() * 0.7);
-    var $videoDefaultHeight = Math.ceil($videoDefaultWidth * 0.5625);
-    jQuery("a[rel^='prettyPhoto']").each(function () {
-
-        var str = jQuery(this).attr('href');
-        str = str.split('&width');
-        if ((str[0].indexOf("youtube") >= 0 || (str[0].indexOf("vimeo")) >= 0))
-        {
-            jQuery(this).attr("href", str[0] + "&width=" + $videoDefaultWidth + "&height=" + $videoDefaultHeight);
-        }
-    });
-    jQuery('.image-slider-wrapper').each(function () {
-        var slider_width = jQuery(this).width();
-        var pagination_width = jQuery(this).find('.carousel_pagination').width();
-        jQuery(this).find('.carousel_pagination').css("margin-left", (slider_width - pagination_width) / 2);
-    });
+        containerBricks.imagesLoaded(function () {
+            containerBricks.masonry({
+                itemSelector: '.masonry__brick',
+                resize: true
+            });
+        });
+    };
 
 
-    //Fix for portfolio item text
-    jQuery('.portfolio-text-holder').each(function () {
-        jQuery(this).find('.portfolio-text-wrapper').css('margin-top', (jQuery(this).height() - jQuery(this).find('.portfolio-text-wrapper').height()) / 2 - 70);
-    });
-});
-//------------------------------------------------------------------------
-//Helper Methods -->
-//------------------------------------------------------------------------
+   /* slick slider
+    * ------------------------------------------------------ */
+    var clSlickSlider = function() {
 
-
-var showHideMobMenu = function (e) {
-    jQuery('.main-menu').slideToggle();
-};
-
-var hideMobMenuItemClick = function (e) {
-    if (jQuery('.mob-menu').is(':visible'))
-    {
-        jQuery('.main-menu').slideUp();
-    }
-};
-
-function is_touch_device() {
-    return !!('ontouchstart' in window);
-}
-
-function isValidEmailAddress(emailAddress) {
-    var pattern = /^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i;
-    return pattern.test(emailAddress);
-}
-
-var SendMail = function () {
-
-    var emailVal = jQuery('#contact-email').val();
-
-    if (isValidEmailAddress(emailVal)) {
-        var params = {
-            'action': 'SendMessage',
-            'name': jQuery('#name').val(),
-            'email': jQuery('#contact-email').val(),
-            'subject': jQuery('#subject').val(),
-            'message': jQuery('#message').val()
-        };
-        jQuery.ajax({
-            type: "POST",
-            url: "php/sendMail.php",
-            data: params,
-            success: function (response) {
-                if (response) {
-                    var responseObj = jQuery.parseJSON(response);
-                    if (responseObj.ResponseData)
-                    {
-                        alert(responseObj.ResponseData);
+        $('.clients').slick({
+            arrows: false,
+            dots: true,
+            infinite: true,
+            slidesToShow: 6,
+            slidesToScroll: 2,
+            //autoplay: true,
+            pauseOnFocus: false,
+            autoplaySpeed: 1000,
+            responsive: [
+                {
+                    breakpoint: 1200,
+                    settings: {
+                        slidesToShow: 5
+                    }
+                },
+                {
+                    breakpoint: 1000,
+                    settings: {
+                        slidesToShow: 4
+                    }
+                },
+                {
+                    breakpoint: 800,
+                    settings: {
+                        slidesToShow: 3,
+                        slidesToScroll: 2
+                    }
+                },
+                {
+                    breakpoint: 500,
+                    settings: {
+                        slidesToShow: 2,
+                        slidesToScroll: 2
                     }
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                //xhr.status : 404, 303, 501...
-                var error = null;
-                switch (xhr.status)
+
+            ]
+        });
+
+        $('.testimonials').slick({
+            arrows: true,
+            dots: false,
+            infinite: true,
+            slidesToShow: 1,
+            slidesToScroll: 1,
+            adaptiveHeight: true,
+            pauseOnFocus: false,
+            autoplaySpeed: 1500,
+            responsive: [
                 {
-                    case "301":
-                        error = "Redirection Error!";
-                        break;
-                    case "307":
-                        error = "Error, temporary server redirection!";
-                        break;
-                    case "400":
-                        error = "Bad request!";
-                        break;
-                    case "404":
-                        error = "Page not found!";
-                        break;
-                    case "500":
-                        error = "Server is currently unavailable!";
-                        break;
-                    default:
-                        error = "Unespected error, please try again later.";
+                    breakpoint: 900,
+                    settings: {
+                        slidesToShow: 1,
+                        slidesToScroll: 1
+                    }
+                },
+                {
+                    breakpoint: 800,
+                    settings: {
+                        arrows: false,
+                        dots: true
+                    }
                 }
-                if (error) {
-                    alert(error);
+            ]
+        });
+    
+    };
+
+   /* Smooth Scrolling
+    * ------------------------------------------------------ */
+    var clSmoothScroll = function() {
+        
+        $('.smoothscroll').on('click', function (e) {
+            var target = this.hash,
+            $target    = $(target);
+            
+                e.preventDefault();
+                e.stopPropagation();
+
+            $('html, body').stop().animate({
+                'scrollTop': $target.offset().top
+            }, cfg.scrollDuration, 'swing').promise().done(function () {
+
+                // check if menu is open
+                if ($('body').hasClass('menu-is-open')) {
+                    $('.header-menu-toggle').trigger('click');
                 }
+
+                window.location.hash = target;
+            });
+        });
+
+    };
+
+
+   /* Placeholder Plugin Settings
+    * ------------------------------------------------------ */
+    var clPlaceholder = function() {
+        $('input, textarea, select').placeholder();  
+    };
+
+
+   /* Alert Boxes
+    * ------------------------------------------------------ */
+    var clAlertBoxes = function() {
+
+        $('.alert-box').on('click', '.alert-box__close', function() {
+            $(this).parent().fadeOut(500);
+        }); 
+
+    };
+
+
+   /* Contact Form
+    * ------------------------------------------------------ */
+    var clContactForm = function() {
+        
+        /* local validation */
+        $('#contactForm').validate({
+        
+            /* submit via ajax */
+            submitHandler: function(form) {
+    
+                var sLoader = $('.submit-loader');
+    
+                $.ajax({
+    
+                    type: "POST",
+                    url: "inc/sendEmail.php",
+                    data: $(form).serialize(),
+                    beforeSend: function() { 
+    
+                        sLoader.slideDown("slow");
+    
+                    },
+                    success: function(msg) {
+    
+                        // Message was sent
+                        if (msg == 'OK') {
+                            sLoader.slideUp("slow"); 
+                            $('.message-warning').fadeOut();
+                            $('#contactForm').fadeOut();
+                            $('.message-success').fadeIn();
+                        }
+                        // There was an error
+                        else {
+                            sLoader.slideUp("slow"); 
+                            $('.message-warning').html(msg);
+                            $('.message-warning').slideDown("slow");
+                        }
+    
+                    },
+                    error: function() {
+    
+                        sLoader.slideUp("slow"); 
+                        $('.message-warning').html("Something went wrong. Please try again.");
+                        $('.message-warning').slideDown("slow");
+    
+                    }
+    
+                });
+            }
+    
+        });
+    };
+
+
+   /* Animate On Scroll
+    * ------------------------------------------------------ */
+    var clAOS = function() {
+        
+        AOS.init( {
+            offset: 200,
+            duration: 600,
+            easing: 'ease-in-sine',
+            delay: 300,
+            once: true,
+            disable: 'mobile'
+        });
+
+    };
+
+
+   /* AjaxChimp
+    * ------------------------------------------------------ */
+    var clAjaxChimp = function() {
+        
+        $('#mc-form').ajaxChimp({
+            language: 'es',
+            url: cfg.mailChimpURL
+        });
+
+        // Mailchimp translation
+        //
+        //  Defaults:
+        //	 'submit': 'Submitting...',
+        //  0: 'We have sent you a confirmation email',
+        //  1: 'Please enter a value',
+        //  2: 'An email address must contain a single @',
+        //  3: 'The domain portion of the email address is invalid (the portion after the @: )',
+        //  4: 'The username portion of the email address is invalid (the portion before the @: )',
+        //  5: 'This email address looks fake or invalid. Please enter a real email address'
+
+        $.ajaxChimp.translations.es = {
+            'submit': 'Submitting...',
+            0: '<i class="fa fa-check"></i> We have sent you a confirmation email',
+            1: '<i class="fa fa-warning"></i> You must enter a valid e-mail address.',
+            2: '<i class="fa fa-warning"></i> E-mail address is not valid.',
+            3: '<i class="fa fa-warning"></i> E-mail address is not valid.',
+            4: '<i class="fa fa-warning"></i> E-mail address is not valid.',
+            5: '<i class="fa fa-warning"></i> E-mail address is not valid.'
+        } 
+
+    };
+
+
+   /* Back to Top
+    * ------------------------------------------------------ */
+    var clBackToTop = function() {
+        
+        var pxShow  = 500,         // height on which the button will show
+        fadeInTime  = 400,         // how slow/fast you want the button to show
+        fadeOutTime = 400,         // how slow/fast you want the button to hide
+        scrollSpeed = 300,         // how slow/fast you want the button to scroll to top. can be a value, 'slow', 'normal' or 'fast'
+        goTopButton = $(".go-top")
+        
+        // Show or hide the sticky footer button
+        $(window).on('scroll', function() {
+            if ($(window).scrollTop() >= pxShow) {
+                goTopButton.fadeIn(fadeInTime);
+            } else {
+                goTopButton.fadeOut(fadeOutTime);
             }
         });
-    } else
-    {
-        alert('Your email is not in valid format');
-    }
+    };
 
 
-};
+   /* Initialize
+    * ------------------------------------------------------ */
+    (function ssInit() {
+        
+        clPreloader();
+        clMenuOnScrolldown();
+        clOffCanvas();
+        clPhotoswipe();
+        clStatCount();
+        clMasonryFolio();
+        clSlickSlider();
+        clSmoothScroll();
+        clPlaceholder();
+        clAlertBoxes();
+        clContactForm();
+        clAOS();
+        clAjaxChimp();
+        clBackToTop();
+
+    })();
+        
+        
+})(jQuery);
